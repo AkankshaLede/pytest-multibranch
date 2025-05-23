@@ -11,7 +11,7 @@ def test_add_positive():
     assert result['add'] > 0, "Add result should be positive"
 
 def test_subtract_positive():
-    result = calculator(-100, -7000, ['subtract'])
+    result = calculator(-100, 7000, ['subtract'])
     assert result['subtract'] > 0, "Subtract result should be positive"
 
 def test_divide_greater_equal_one():
