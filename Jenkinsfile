@@ -84,7 +84,7 @@ pipeline {
                         if (env.CHANGE_BRANCH) {
                             IS_PR = true
                             BRANCH_NAME = env.CHANGE_BRANCH
-                            echo "📦 Pull Request from branch: ${BRANCH_NAME}"
+                            echo "📦 Pull Request from source branch: ${BRANCH_NAME}"
                         } else if (env.BRANCH_NAME) {
                             echo "🔁 Branch build: ${env.BRANCH_NAME}"
                         } else {
@@ -93,14 +93,24 @@ pipeline {
                             error("Unsupported event: Could not detect branch from environment.")
                         }
 
-                        // Allowed branches to build
-                        def allowedBranches = ['main', 'branch1', 'branch2']
-                        // Check if the current branch is in the list of allowed branches
-                        if (!allowedBranches.contains(BRANCH_NAME)) {
-                            echo "⚠️ Skipping branch ${BRANCH_NAME} as it is not in the allowed list."
+                        // Allowed branches for direct pushes (not PRs)
+                        def allowedBranchesForDirectPush = ['main', 'branch1', 'branch2']
+
+                        // Only apply the allowedBranches check if it's NOT a Pull Request
+                        if (!IS_PR && !allowedBranchesForDirectPush.contains(BRANCH_NAME)) {
+                            echo "⚠️ Skipping direct push to branch ${BRANCH_NAME} as it is not in the allowed list."
                             currentBuild.result = 'FAILURE' // Explicitly mark build as failure
-                            error("Branch '${BRANCH_NAME}' is not allowed, skipping the build.")
+                            error("Direct push to branch '${BRANCH_NAME}' is not allowed, skipping the build.")
+                        } else if (IS_PR) {
+                            // For PRs, we allow the build to proceed regardless of the source branch name
+                            // (as long as it was detected as a PR build).
+                            echo "✅ Allowing PR build from source branch: ${BRANCH_NAME}."
+                            // If you want to check the *target* branch of the PR (the branch it's merging into),
+                            // you would typically use 'env.CHANGE_TARGET'. However, the availability
+                            // and exact usage of CHANGE_TARGET can depend on your SCM plugin configuration.
+                            // For this immediate issue, we are allowing all PR source branches.
                         }
+
                     } catch (e) {
                         // Catch any unexpected errors in this stage
                         currentBuild.result = 'FAILURE'
